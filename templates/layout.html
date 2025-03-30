@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Audio Transcription Tool{% endblock %}</title>
+    
+    <!-- Bootstrap CSS with Replit dark theme -->
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    
+    <!-- Font Awesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Custom styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="fas fa-headphones me-2"></i>
+                Audio Transcription Tool
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('extract_page') }}">
+                            <i class="fas fa-cut me-1"></i> Extract Segments
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('direct_page') }}">
+                            <i class="fas fa-microphone me-1"></i> Direct Transcription
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('attached_files_page') }}">
+                            <i class="fas fa-paperclip me-1"></i> Process Attached Files
+                        </a>
+                    </li>
+                    {% if 'transcription' in session %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('results') }}">Results</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-danger" href="{{ url_for('clear_session') }}">
+                            <i class="fas fa-trash-alt me-1"></i> Clear Session
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+    
+    <!-- Alerts container for JavaScript-generated alerts -->
+    <div id="alerts-container"></div>
+    
+    <!-- Main content -->
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-dark text-center text-light py-4 mt-5">
+        <div class="container">
+            <p class="mb-0">
+                <i class="fas fa-microphone-alt me-2"></i> 
+                Audio Transcription Tool | Specializing in Egyptian Arabic & English
+            </p>
+            <p class="text-muted mt-2 small">
+                Powered by OpenAI Whisper API
+            </p>
+        </div>
+    </footer>
+    
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

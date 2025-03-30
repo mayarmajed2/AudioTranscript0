@@ -1,0 +1,201 @@
+{% extends 'layout.html' %}
+
+{% block title %}Extract Audio Segment{% endblock %}
+
+{% block content %}
+<div class="container pt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="mb-4">استخراج ونسخ مقطع صوتي محدد</h1>
+            <p class="lead">اختر ملفًا صوتيًا وحدد الوقت الذي تريد استخراجه ونسخه</p>
+            <hr>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <form action="{{ url_for('extract_segment') }}" method="post" enctype="multipart/form-data" class="mb-4">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">معلومات المقطع</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="audio_file" class="form-label fw-bold">الملف الصوتي</label>
+                            <input type="file" class="form-control" id="audio_file" name="audio_file" accept=".mp3,.wav,.m4a,.ogg" required>
+                            <div class="form-text text-muted">الصيغ المدعومة: MP3, WAV, M4A, OGG | الحد الأقصى للحجم: 100 ميجابايت</div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="start_time" class="form-label fw-bold">وقت البداية (بالثواني)</label>
+                                <input type="number" class="form-control" id="start_time" name="start_time" min="0" value="0" required>
+                                <div class="form-text text-muted">مثال: 300 للبدء من الدقيقة الخامسة</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="duration" class="form-label fw-bold">المدة (بالثواني)</label>
+                                <input type="number" class="form-control" id="duration" name="duration" min="5" max="300" value="60" required>
+                                <div class="form-text text-muted">الحد الأقصى: 300 ثانية (5 دقائق)</div>
+                            </div>
+                        </div>
+
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" role="switch" id="time_calculator_toggle">
+                            <label class="form-check-label" for="time_calculator_toggle">استخدم محول الوقت (دقائق:ثواني)</label>
+                        </div>
+
+                        <div id="time_calculator" class="row mb-3 d-none">
+                            <div class="col-md-6">
+                                <label for="start_minutes" class="form-label">البداية (دقائق:ثواني)</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="start_minutes" min="0" value="0">
+                                    <span class="input-group-text">:</span>
+                                    <input type="number" class="form-control" id="start_seconds" min="0" max="59" value="0">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="duration_minutes" class="form-label">المدة (دقائق:ثواني)</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="duration_minutes" min="0" max="5" value="1">
+                                    <span class="input-group-text">:</span>
+                                    <input type="number" class="form-control" id="duration_seconds" min="0" max="59" value="0">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">خيارات متقدمة</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">استخدام طريقة احتياطية في حالة فشل OpenAI API</label>
+                            <div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="use_fallback" id="fallback_auto" value="auto" checked>
+                                    <label class="form-check-label" for="fallback_auto">تلقائي</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="use_fallback" id="fallback_always" value="always">
+                                    <label class="form-check-label" for="fallback_always">دائمًا</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="use_fallback" id="fallback_never" value="never">
+                                    <label class="form-check-label" for="fallback_never">أبدًا</label>
+                                </div>
+                            </div>
+                            <div class="form-text text-muted">اختر "دائمًا" إذا كنت تريد استخدام الطريقة الاحتياطية مباشرة بدون تجربة OpenAI.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">الطريقة الاحتياطية</label>
+                            <div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="fallback_method" id="method_sphinx" value="sphinx" checked>
+                                    <label class="form-check-label" for="method_sphinx">CMU Sphinx (دون اتصال بالإنترنت، مناسب للإنجليزية)</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="fallback_method" id="method_google" value="google">
+                                    <label class="form-check-label" for="method_google">Google Speech Recognition (يتطلب إنترنت)</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary btn-lg">استخراج ونسخ المقطع</button>
+                    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-lg ms-2">عودة</a>
+                </div>
+            </form>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">معلومات ونصائح</h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">كيفية تحديد المقطع:</h6>
+                    <ul class="mb-4">
+                        <li>حدد وقت البداية بالثواني من بداية الملف الصوتي</li>
+                        <li>حدد مدة المقطع المطلوب بالثواني (الحد الأقصى 5 دقائق)</li>
+                        <li>يمكنك استخدام محول الوقت لتحديد الوقت بصيغة دقائق:ثواني</li>
+                    </ul>
+                    
+                    <h6 class="card-subtitle mb-2 text-muted">أمثلة:</h6>
+                    <ul>
+                        <li>لاستخراج المقطع من الدقيقة <b>5:00</b> إلى <b>6:00</b>:
+                            <ul>
+                                <li>وقت البداية: <b>300</b> (5 دقائق × 60 ثانية)</li>
+                                <li>المدة: <b>60</b> (1 دقيقة × 60 ثانية)</li>
+                            </ul>
+                        </li>
+                        <li>لاستخراج المقطع من الدقيقة <b>10:30</b> إلى <b>13:00</b>:
+                            <ul>
+                                <li>وقت البداية: <b>630</b> (10 دقائق × 60 ثانية + 30 ثانية)</li>
+                                <li>المدة: <b>150</b> (2 دقائق و 30 ثانية = 150 ثانية)</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Time calculator toggle
+        const toggleCheckbox = document.getElementById('time_calculator_toggle');
+        const timeCalculator = document.getElementById('time_calculator');
+        const startTimeInput = document.getElementById('start_time');
+        const durationInput = document.getElementById('duration');
+        const startMinutesInput = document.getElementById('start_minutes');
+        const startSecondsInput = document.getElementById('start_seconds');
+        const durationMinutesInput = document.getElementById('duration_minutes');
+        const durationSecondsInput = document.getElementById('duration_seconds');
+
+        toggleCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                timeCalculator.classList.remove('d-none');
+                // Convert current values to minutes:seconds
+                const startTotalSeconds = parseInt(startTimeInput.value) || 0;
+                const durationTotalSeconds = parseInt(durationInput.value) || 60;
+                
+                startMinutesInput.value = Math.floor(startTotalSeconds / 60);
+                startSecondsInput.value = startTotalSeconds % 60;
+                
+                durationMinutesInput.value = Math.floor(durationTotalSeconds / 60);
+                durationSecondsInput.value = durationTotalSeconds % 60;
+            } else {
+                timeCalculator.classList.add('d-none');
+            }
+        });
+
+        // Update seconds when minutes:seconds change
+        function updateTimeInputs() {
+            const startMinutes = parseInt(startMinutesInput.value) || 0;
+            const startSeconds = parseInt(startSecondsInput.value) || 0;
+            const durationMinutes = parseInt(durationMinutesInput.value) || 0;
+            const durationSeconds = parseInt(durationSecondsInput.value) || 0;
+            
+            // Calculate total seconds
+            const startTotalSeconds = (startMinutes * 60) + startSeconds;
+            const durationTotalSeconds = (durationMinutes * 60) + durationSeconds;
+            
+            // Update the main inputs
+            startTimeInput.value = startTotalSeconds;
+            durationInput.value = durationTotalSeconds;
+        }
+
+        // Add event listeners to all minute/second inputs
+        startMinutesInput.addEventListener('change', updateTimeInputs);
+        startSecondsInput.addEventListener('change', updateTimeInputs);
+        durationMinutesInput.addEventListener('change', updateTimeInputs);
+        durationSecondsInput.addEventListener('change', updateTimeInputs);
+    });
+</script>
+{% endblock %}

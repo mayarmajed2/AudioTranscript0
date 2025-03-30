@@ -1,0 +1,215 @@
+{% extends "layout.html" %}
+
+{% block title %}Transcription Results - Audio Transcription Tool{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-success bg-opacity-25">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-check-circle me-2"></i> 
+                    Transcription Results
+                </h1>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-success">
+                    <i class="fas fa-thumbs-up me-2"></i>
+                    Processing completed for <strong>{{ audio_filename }}</strong>
+                    
+                    {% if session.get('segment_info') %}
+                    <div class="mt-2">
+                        <span class="badge bg-info">
+                            <i class="fas fa-cut me-1"></i> {{ session.get('segment_info') }}
+                        </span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if transcription_method %}
+                    <div class="mt-2 small">
+                        {% set bg_color = {
+                          'OpenAI Whisper API': 'bg-info',
+                          'Google Speech (selected)': 'bg-success',
+                          'CMU Sphinx (selected)': 'bg-success',
+                          'Fallback (automatic)': 'bg-warning',
+                          'Fallback (no API key)': 'bg-warning'
+                        }.get(transcription_method, 'bg-info') %}
+                        
+                        {% set icon = {
+                          'OpenAI Whisper API': 'fa-robot',
+                          'Google Speech (selected)': 'fa-globe',
+                          'CMU Sphinx (selected)': 'fa-microphone',
+                          'Fallback (automatic)': 'fa-exchange-alt',
+                          'Fallback (no API key)': 'fa-key'
+                        }.get(transcription_method, 'fa-robot') %}
+                        
+                        <span class="badge {{ bg_color }}">
+                            <i class="fas {{ icon }} me-1"></i> 
+                            Transcription method: {{ transcription_method }}
+                        </span>
+                        
+                        {% if "Fallback" in transcription_method %}
+                            <div class="mt-1 text-warning">
+                                <i class="fas fa-info-circle me-1"></i>
+                                {% if "no API key" in transcription_method %}
+                                    No OpenAI API key was available, so the fallback transcription system was used instead.
+                                {% else %}
+                                    The fallback transcription system was used because the primary Whisper API encountered an error.
+                                {% endif %}
+                            </div>
+                        {% elif "selected" in transcription_method %}
+                            <div class="mt-1 text-success">
+                                <i class="fas fa-check-circle me-1"></i>
+                                Used your preferred transcription method as selected in the form options.
+                            </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-end">
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-outline-primary download-btn" data-content-type="summary">
+                                    <i class="fas fa-file-text me-1"></i> Download Summary
+                                </button>
+                                <button class="btn btn-sm btn-outline-primary download-btn" data-content-type="key_points">
+                                    <i class="fas fa-key me-1"></i> Download Key Points
+                                </button>
+                                <button class="btn btn-sm btn-outline-primary download-btn" data-content-type="transcription">
+                                    <i class="fas fa-file-alt me-1"></i> Download Transcription
+                                </button>
+                                <button class="btn btn-sm btn-outline-primary download-btn" data-content-type="all">
+                                    <i class="fas fa-download me-1"></i> Download All
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tabs navigation -->
+                <ul class="nav nav-tabs mb-4" id="resultsTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="summary-tab" data-bs-toggle="tab" data-bs-target="#summary" type="button" role="tab" aria-controls="summary" aria-selected="true">
+                            <i class="fas fa-book me-2"></i> Summary
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="key-points-tab" data-bs-toggle="tab" data-bs-target="#key-points" type="button" role="tab" aria-controls="key-points" aria-selected="false">
+                            <i class="fas fa-key me-2"></i> Key Points
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="transcription-tab" data-bs-toggle="tab" data-bs-target="#transcription" type="button" role="tab" aria-controls="transcription" aria-selected="false">
+                            <i class="fas fa-file-alt me-2"></i> Full Transcription
+                        </button>
+                    </li>
+                </ul>
+                
+                <!-- Tabs content -->
+                <div class="tab-content" id="resultsTabsContent">
+                    <!-- Summary Tab -->
+                    <div class="tab-pane fade show active" id="summary" role="tabpanel" aria-labelledby="summary-tab">
+                        <div class="summary-box">
+                            <h3 class="h4 mb-3">
+                                <i class="fas fa-book me-2 text-primary"></i>
+                                Recording Summary
+                            </h3>
+                            
+                            {% if summary %}
+                                <div class="p-3 bg-dark bg-opacity-25 rounded">
+                                    <p class="mb-0 lead" style="white-space: pre-wrap; font-family: inherit;">{{ summary }}</p>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Could not generate a summary for this recording.
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Key Points Tab -->
+                    <div class="tab-pane fade" id="key-points" role="tabpanel" aria-labelledby="key-points-tab">
+                        <div class="key-points-box">
+                            <h3 class="h4 mb-3">
+                                <i class="fas fa-lightbulb me-2 text-warning"></i>
+                                Key Points
+                            </h3>
+                            
+                            {% if key_points and key_points|length > 0 %}
+                                <ul class="list-unstyled">
+                                    {% for point in key_points %}
+                                        <li class="key-point-item mb-2 p-2 bg-dark bg-opacity-10 rounded"><i class="fas fa-check-circle text-success me-2"></i>{{ point }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    No unique key points were identified that weren't already in the lecture materials.
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Transcription Tab -->
+                    <div class="tab-pane fade" id="transcription" role="tabpanel" aria-labelledby="transcription-tab">
+                        <div class="transcription-box">
+                            <h3 class="h4 mb-3">
+                                <i class="fas fa-file-alt me-2 text-info"></i>
+                                Full Transcription
+                            </h3>
+                            
+                            {% if transcription %}
+                                <div class="p-3 bg-dark rounded">
+                                    <pre class="mb-0" style="white-space: pre-wrap; font-family: inherit;">{{ transcription }}</pre>
+                                </div>
+                                
+                                {% if "[Chunk" in transcription and "transcribed with fallback method" in transcription %}
+                                <div class="alert alert-warning mt-3">
+                                    <h5><i class="fas fa-info-circle me-2"></i>Mixed Transcription Methods</h5>
+                                    <p>Some parts of this audio were transcribed using different methods due to processing challenges.</p>
+                                    <ul class="mb-0">
+                                        <li>Sections marked with <code>[Chunk X transcribed with fallback method]</code> were processed using the fallback system.</li>
+                                        <li>This typically occurs with long recordings or sections with complex audio.</li>
+                                        <li>The quality may vary between different sections of the transcription.</li>
+                                    </ul>
+                                </div>
+                                {% endif %}
+                                
+                                {% if "[Transcription failed for" in transcription %}
+                                <div class="alert alert-danger mt-3">
+                                    <h5><i class="fas fa-exclamation-triangle me-2"></i>Some Sections Failed</h5>
+                                    <p>Parts of this audio could not be transcribed with any available method.</p>
+                                    <ul class="mb-0">
+                                        <li>Sections marked with <code>[Transcription failed for segment X]</code> could not be processed.</li>
+                                        <li>This may happen with very noisy audio, non-speech sounds, or unsupported languages.</li>
+                                        <li>Consider re-recording these sections with clearer audio if possible.</li>
+                                    </ul>
+                                </div>
+                                {% endif %}
+                            {% else %}
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    No transcription data available.
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('index') }}" class="btn btn-primary">
+                        <i class="fas fa-upload me-2"></i> Process Another File
+                    </a>
+                    <a href="{{ url_for('clear_session') }}" class="btn btn-outline-danger">
+                        <i class="fas fa-trash-alt me-2"></i> Clear Results
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

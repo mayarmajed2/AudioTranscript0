@@ -1,0 +1,78 @@
+{% extends 'layout.html' %}
+
+{% block title %}النسخ التلقائي المباشر{% endblock %}
+
+{% block content %}
+<div class="container pt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="mb-4">النسخ التلقائي المباشر باستخدام OpenAI Whisper</h1>
+            <p class="lead">قم بتحميل ملف صوتي لنسخه تلقائيًا بشكل مباشر باستخدام OpenAI Whisper API</p>
+            <hr>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <form action="{{ url_for('direct_transcribe') }}" method="post" enctype="multipart/form-data" class="mb-4">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">تحميل الملف الصوتي</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="audio_file" class="form-label fw-bold">الملف الصوتي</label>
+                            <input type="file" class="form-control" id="audio_file" name="audio_file" accept=".mp3,.wav,.m4a,.ogg" required>
+                            <div class="form-text text-muted">الصيغ المدعومة: MP3, WAV, M4A, OGG | الحد الأقصى للحجم: 25 ميجابايت</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="language" class="form-label fw-bold">لغة التسجيل</label>
+                            <select class="form-select" id="language" name="language">
+                                <option value="ar-eg" selected>العربية المصرية</option>
+                                <option value="en">الإنجليزية</option>
+                                <option value="ar">العربية (عام)</option>
+                                <option value="auto">تلقائي (اكتشاف تلقائي)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" role="switch" id="compress_audio" name="compress_audio" value="1">
+                            <label class="form-check-label" for="compress_audio">ضغط الملف الصوتي قبل المعالجة (ينصح به للملفات الكبيرة)</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary btn-lg">بدء النسخ التلقائي</button>
+                    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-lg ms-2">عودة</a>
+                </div>
+            </form>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">معلومات ونصائح</h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">نصائح للنسخ التلقائي الأفضل:</h6>
+                    <ul class="mb-4">
+                        <li>تأكد من وضوح الصوت وقلة الضوضاء الخلفية</li>
+                        <li>قم باختيار اللغة الصحيحة للتسجيل الصوتي</li>
+                        <li>للملفات الكبيرة (أكثر من 10 ميجابايت)، قم بتفعيل خيار الضغط</li>
+                        <li>الحد الأقصى لحجم الملف هو 25 ميجابايت</li>
+                    </ul>
+                    
+                    <h6 class="card-subtitle mb-2 text-muted">حول دقة النسخ التلقائي:</h6>
+                    <ul>
+                        <li>نستخدم API من OpenAI Whisper للحصول على أفضل دقة ممكنة</li>
+                        <li>يعمل بشكل جيد مع اللهجة المصرية والإنجليزية</li>
+                        <li>في حالة حدوث مشاكل، يمكنك تقسيم الملف إلى مقاطع أصغر</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

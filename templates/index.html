@@ -1,0 +1,193 @@
+{% extends "layout.html" %}
+
+{% block title %}Upload Audio - Audio Transcription Tool{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary bg-opacity-25">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-microphone-alt me-2"></i> 
+                    Audio Transcription Tool
+                </h1>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Upload an audio recording for transcription with special focus on Egyptian Arabic and English. 
+                    Optionally, upload lecture materials to identify key points not mentioned in them.
+                </div>
+                
+                <div class="alert alert-secondary">
+                    <i class="fas fa-clock me-2"></i>
+                    <strong>Longer Recordings:</strong> Audio files longer than 15 minutes (quarter hour) will be automatically
+                    split into smaller chunks for processing, and you'll receive the complete transcript as a single file.
+                </div>
+                
+                <form id="upload-form" action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data">
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Audio Recording <span class="text-danger">*</span></label>
+                        <div class="file-upload-container">
+                            <input type="file" name="audio_file" id="audio_file" class="file-input" accept=".mp3,.wav,.ogg,.m4a" required>
+                            <label for="audio_file" class="file-label btn btn-primary">
+                                <i class="fas fa-upload me-2"></i> Choose Audio File
+                            </label>
+                            <div class="form-text text-muted mt-2">Supported formats: MP3, WAV, OGG, M4A</div>
+                            <div class="file-name-display mt-2" id="audio-file-name">
+                                <span class="text-muted">No file selected</span>
+                            </div>
+                            <div id="audio-loading-indicator" class="d-none mt-2">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <span class="ms-2">Processing audio file...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Lecture Materials (Optional)</label>
+                        <div class="file-upload-container">
+                            <input type="file" name="lecture_file" id="lecture_file" class="file-input" accept=".pdf,.txt">
+                            <label for="lecture_file" class="file-label btn btn-secondary">
+                                <i class="fas fa-file-alt me-2"></i> Choose Lecture File
+                            </label>
+                            <div class="form-text text-muted mt-2">Supported formats: PDF, TXT</div>
+                            <div class="file-name-display mt-2" id="lecture-file-name">
+                                <span class="text-muted">No file selected (optional)</span>
+                            </div>
+                            <div id="lecture-loading-indicator" class="d-none mt-2">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <span class="ms-2">Processing lecture file...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Advanced Settings</label>
+                        
+                        <div class="card bg-dark border-secondary">
+                            <div class="card-body">
+                                <div class="row">
+                                    <!-- Fallback Settings -->
+                                    <div class="col-md-6 mb-3 mb-md-0">
+                                        <label class="form-label">Fallback Mode</label>
+                                        <select name="use_fallback" class="form-select">
+                                            <option value="auto" selected>Auto (Use fallback only when Whisper fails)</option>
+                                            <option value="always">Always (Try fallback method first)</option>
+                                            <option value="never">Never (Use only Whisper API)</option>
+                                        </select>
+                                        <div class="form-text small text-muted">Controls when to use alternative transcription methods</div>
+                                    </div>
+                                    
+                                    <!-- Fallback Method -->
+                                    <div class="col-md-6">
+                                        <label class="form-label">Fallback Method</label>
+                                        <select name="fallback_method" class="form-select">
+                                            <option value="google" selected>Google Speech API (Better for Egyptian Arabic)</option>
+                                            <option value="sphinx">CMU Sphinx (Offline, no internet needed)</option>
+                                        </select>
+                                        <div class="form-text small text-muted">Choose which alternative service to use if needed</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="alert alert-secondary mt-3 mb-0">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <small>The fallback system provides alternatives when the primary transcription service (OpenAI Whisper) 
+                                    encounters errors such as API quotas, rate limits, or connectivity issues.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" id="submit-button" class="btn btn-lg btn-success" disabled>
+                            <i class="fas fa-play me-2"></i> Start Transcription
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer bg-dark">
+                <div class="row">
+                    <div class="col-md-4 text-center mb-3 mb-md-0">
+                        <i class="fas fa-language fa-2x text-primary mb-2"></i>
+                        <h5>Egyptian Arabic & English</h5>
+                        <p class="small text-muted">Specialized in both languages</p>
+                    </div>
+                    <div class="col-md-4 text-center mb-3 mb-md-0">
+                        <i class="fas fa-key fa-2x text-primary mb-2"></i>
+                        <h5>Key Points Extraction</h5>
+                        <p class="small text-muted">Identifies unique content</p>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <i class="fas fa-file-download fa-2x text-primary mb-2"></i>
+                        <h5>Download Results</h5>
+                        <p class="small text-muted">Save transcriptions easily</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card shadow-sm">
+            <div class="card-header bg-secondary bg-opacity-25">
+                <h2 class="h4 mb-0">
+                    <i class="fas fa-info-circle me-2"></i> 
+                    How It Works
+                </h2>
+            </div>
+            <div class="card-body">
+                <ol class="list-group list-group-numbered mb-0">
+                    <li class="list-group-item bg-dark">
+                        <div class="ms-2 me-auto">
+                            <div class="fw-bold">Upload Audio</div>
+                            Upload your audio recording (lecture, meeting, etc.)
+                        </div>
+                    </li>
+                    <li class="list-group-item bg-dark">
+                        <div class="ms-2 me-auto">
+                            <div class="fw-bold">Add Lecture Materials (Optional)</div>
+                            Upload related documents to compare with audio content
+                        </div>
+                    </li>
+                    <li class="list-group-item bg-dark">
+                        <div class="ms-2 me-auto">
+                            <div class="fw-bold">Process Content</div>
+                            Our system transcribes audio and analyzes content
+                        </div>
+                    </li>
+                    <li class="list-group-item bg-dark">
+                        <div class="ms-2 me-auto">
+                            <div class="fw-bold">View Results</div>
+                            Get transcription and key points not mentioned in lecture materials
+                        </div>
+                    </li>
+                    <li class="list-group-item bg-dark">
+                        <div class="ms-2 me-auto">
+                            <div class="fw-bold">Download &amp; Share</div>
+                            Save results as text files for future reference
+                        </div>
+                    </li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Processing overlay - shown during file processing -->
+<div id="processing-overlay" class="processing-overlay d-none">
+    <div class="spinner-border text-light" style="width: 3rem; height: 3rem;" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <h3 class="mt-4">Processing your files...</h3>
+    <p class="text-muted">This may take a few moments depending on the file size.</p>
+    <p class="text-light small mt-2">
+        <i class="fas fa-info-circle me-1"></i>
+        Audio files longer than 15 minutes are automatically split and processed in sections.
+        <br>
+        This improves accuracy but may take additional time.
+    </p>
+</div>
+{% endblock %}

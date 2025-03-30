@@ -1,0 +1,96 @@
+{% extends "layout.html" %}
+
+{% block title %}Process Attached Files - Audio Transcription Tool{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary bg-opacity-25">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-paperclip me-2"></i> 
+                    Process Attached Files
+                </h1>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Select an already attached audio file to process without having to upload large files again.
+                </div>
+                
+                <form id="attached-form" action="{{ url_for('process_attached_file') }}" method="post">
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Select Attached Audio File <span class="text-danger">*</span></label>
+                        <select name="attached_file" class="form-select" required>
+                            <option value="" selected disabled>-- Select an attached file --</option>
+                            {% for file in attached_files %}
+                                <option value="{{ file }}">{{ file }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text text-muted mt-2">Available attached audio files</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Advanced Settings</label>
+                        
+                        <div class="card bg-dark border-secondary">
+                            <div class="card-body">
+                                <div class="row">
+                                    <!-- Fallback Settings -->
+                                    <div class="col-md-6 mb-3 mb-md-0">
+                                        <label class="form-label">Fallback Mode</label>
+                                        <select name="use_fallback" class="form-select">
+                                            <option value="auto" selected>Auto (Use fallback only when Whisper fails)</option>
+                                            <option value="always">Always (Try fallback method first)</option>
+                                            <option value="never">Never (Use only Whisper API)</option>
+                                        </select>
+                                        <div class="form-text small text-muted">Controls when to use alternative transcription methods</div>
+                                    </div>
+                                    
+                                    <!-- Fallback Method -->
+                                    <div class="col-md-6">
+                                        <label class="form-label">Fallback Method</label>
+                                        <select name="fallback_method" class="form-select">
+                                            <option value="google" selected>Google Speech API (Better for Egyptian Arabic)</option>
+                                            <option value="sphinx">CMU Sphinx (Offline, no internet needed)</option>
+                                        </select>
+                                        <div class="form-text small text-muted">Choose which alternative service to use if needed</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-lg btn-success">
+                            <i class="fas fa-play me-2"></i> Start Transcription
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Processing overlay - shown during file processing -->
+<div id="processing-overlay" class="processing-overlay d-none">
+    <div class="spinner-border text-light" style="width: 3rem; height: 3rem;" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <h3 class="mt-4">Processing your files...</h3>
+    <p class="text-muted">This may take a few moments depending on the file size.</p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('attached-form');
+    
+    form.addEventListener('submit', function() {
+        // Show the processing overlay when form is submitted
+        document.getElementById('processing-overlay').classList.remove('d-none');
+    });
+});
+</script>
+{% endblock %}
